@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小小打击鼓</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* 保持视频比例，裁剪多余部分铺满 */
+            object-fit: cover;
+            z-index: -1; /* 设置为-1，使视频位于其他元素下方 */
+        }
+        html {
+            font-size: 62.5%;
+            font-family: sans-serif;
+            background: url();
+            background-size: cover;
+        }
+
+        .keys {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            gap: 1rem;
+            padding: 2rem;
+        }
+
+        .key {
+            margin: 1rem;
+            /*指的是根元素大小*/
+            padding: 1rem 0.5rem;
+            width: 10rem;
+            border: 0.4rem solid black;
+            border-radius: 0.5rem;
+            font-size: 1.5rem;
+            color: #fff;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.4);
+            text-shadow: 0 0 0.5rem black;
+            transition: all 0.10s ease;
+            /*过渡动画持续时间是70ms*/
+        }
+
+        kbd {
+            display: block;
+            font-size: 4rem;
+        }
+
+        .sound {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            color: #ffc600;
+        }
+
+        .playing {
+            border-color: #ffc600;
+            box-shadow: 0 0 1rem #ffc600;
+            transform: scale(1.1);
+        }
+    </style>
+    <script type="text/javascript">
+        const timers = new Map(); //创建一个map对象,对应的key存放对应的定时器id
+        window.addEventListener("keydown", function (e) {
+            let timer;
+            const keyEl = document.querySelector(`div[data-key="${e.code}"]`);
+            const audioEl = document.querySelector(`audio[data-key="${e.code}"]`);
+            if (!audioEl) return;//如果没找到音频文件就返回
+            audioEl.currentTime = 0;//currentTime音频播放位置秒计
+            audioEl.play();//播放音频play()方法
+            // 给按键添加样式
+            keyEl.classList.add("playing");
+            const allKeysEl = document.querySelectorAll(".key");
+            allKeysEl.forEach(key => {
+                key.addEventListener("transitionend", e => {
+                    if (e.propertyName !== "border-bottom-color") return;
+                    key.classList.remove("playing");
+                });
+                // // 先清除原来里面有的定时器
+                // if (timers.has(e.code)) {
+                //     clearTimeout(timers.get(e.code));//如果上一个timer还存在就先清除
+                // }
+                // //这里用setTimeout是只用一次，而setInterval是定时器，会一直执行
+                // // 这是当audio音频播放结束，移除样式
+                // timer = setTimeout(() => {//这个箭头的意思，箭头函数，和function(){}一样
+                //     keyEl.classList.remove("playing");
+                //     //这里用setTimeout是只用一次，而setInterval是定时器，会一直执行
+                //     // 这是当audio音频播放结束，移除样式
+                //     const timer = setTimeout(() => {//这个箭头的意思，箭头函数，和function(){}一样
+                //         keyEl.classList.remove("playing");
+                //         timers.delete(e.code)
+                //     }, 100)//这里的意思是调用者70ms后就移除样式
+                //     timers.set(e.code, timer);//把定时器id存到map里面(先存，70ms后才会进行删除)
+                });
+            });
+    </script>
+</head>
+
+<body>
+    <video id="bg-video" autoplay loop muted playsinline><!--自动播放 循环 静音 手机端不全屏 -->
+    <!-- 这里换成你的视频路径 -->
+    <source src="videos/打击鼓背景.mp4" type="video/mp4">
+  </video>
+    
+        <div class="keys">
+            <div data-key="KeyA" class="key">
+                <kbd>A</kbd> <!--相当于键盘按键按到多少 -->
+                <span class="sound">clap</span>
+            </div>
+            <div data-key="KeyS" class="key">
+                <kbd>S</kbd>
+                <span class="sound">hihat</span>
+            </div>
+            <div data-key="KeyD" class="key">
+                <kbd>D</kbd>
+                <span class="sound">kick</span>
+            </div>
+            <div data-key="KeyF" class="key">
+                <kbd>F</kbd>
+                <span class="sound">openhat</span>
+            </div>
+            <div data-key="KeyG" class="key">
+                <kbd>G</kbd>
+                <span class="sound">boom</span>
+            </div>
+            <div data-key="KeyH" class="key">
+                <kbd>H</kbd>
+                <span class="sound">ride</span>
+            </div>
+            <div data-key="KeyJ" class="key">
+                <kbd>J</kbd>
+                <span class="sound">snare</span>
+            </div>
+            <div data-key="KeyK" class="key">
+                <kbd>K</kbd>
+                <span class="sound">tom</span>
+            </div>
+            <div data-key="KeyL" class="key">
+                <kbd>L</kbd>
+                <span class="sound">tink</span>
+            </div>
+        </div>
+        <audio data-key="KeyA" src="sounds/clap.wav"></audio>
+        <audio data-key="KeyS" src="sounds/hihat.wav"></audio>
+        <audio data-key="KeyD" src="sounds/kick.wav"></audio>
+        <audio data-key="KeyF" src="sounds/openhat.wav"></audio>
+        <audio data-key="KeyG" src="sounds/boom.wav"></audio>
+        <audio data-key="KeyH" src="sounds/ride.wav"></audio>
+        <audio data-key="KeyJ" src="sounds/snare.wav"></audio>
+        <audio data-key="KeyK" src="sounds/tom.wav"></audio>
+        <audio data-key="KeyL" src="sounds/tink.wav"></audio>
+    
+</body>
+
+</html>
