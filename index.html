@@ -4,259 +4,400 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小小打击鼓</title>
+    <title>简易琴</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        #bg-video {
+        /* ======粒子星空背景层======= */
+        #star-canvas {
             position: fixed;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            /*点击穿透，不拦截鼠标*/
+            background: #23233e;
+        }
+
+        /* ============================= */
+        body {
             width: 100vw;
             height: 100vh;
-            /* 保持视频比例，裁剪多余部分铺满 */
-            object-fit: cover;
-            z-index: -1;
-            /* 设置为-1，使视频位于其他元素下方 */
-            /* 兜底：视频加载失败时显示背景色 */
-            background: #1a1a2e url('imgs/预防背景.png') center/cover no-repeat;
-        }
-
-        html {
-            font-size: 62.5%;
-            font-family: sans-serif;
-            background-size: cover;
-        }
-
-        .keys {
+            margin: 0;
+            /*去除默认的边距*/
             display: flex;
-            flex-wrap: wrap;
-            /*这是允许换行的意思*/
             justify-content: center;
-            /* */
             align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
-            /*手机适配*/
-            gap: 2rem;
-            padding: 2rem;
+            background-size: 100% 100%;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            /* 核心修改：移除移动端点击时的蓝色高亮框 */
         }
 
-        .key {
-            margin: 1rem;
-            /*指的是根元素大小*/
-            padding: 1rem 0.5rem;
-            width: 10rem;
-            border: 0.4rem solid black;
-            border-radius: 0.5rem;
-            font-size: 1.5rem;
-            color: #fff;
+        .container {
             text-align: center;
-            background-color: rgba(0, 0, 0, 0.4);
-            text-shadow: 0 0 0.5rem black;
-            transition: all 0.10s ease;
-            /*过渡动画持续时间是70ms*/
+            padding: 20px;
+            border-radius: 10px;
+            display: grid;
+            /* 使用 Grid 布局 */
+            grid-template-columns: repeat(5, 1fr);
+            /* 固定 5 列 */
+            gap: 15px;
+            /* 按键间距 */
+            width: 350px;
+            /* 调整总宽度 */
+            list-style: none;
+            backdrop-filter: blur(1.5px);
         }
 
-        kbd {
-            display: block;
-            font-size: 4rem;
+        li {
+            position: relative;
+            display: flex;
+            /*flex 让内部内容（比如图标、文字）完美居中更简单*/
+            justify-content: center;
+            /* 水平居中 */
+            align-items: center;
+            /* 垂直居中 —— 替代了 line-height 的功能 */
+            width: 55px;
+            height: 55px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            cursor: pointer;
+            /* 鼠标移入时，鼠标变为小手 */
+            font-size: 1.5em;
+            line-height: 20px;
+            /* 行高 */
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            transition: background 0.1s;
+            /* 添加平滑过渡 */
         }
 
-        .sound {
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1rem;
-            color: #ffc600;
+        li span {
+            pointer-events: none;
+            /* 让点击穿透到父级 li，简化 JS 处理 */
+            position: absolute;
+            /* 相对于父元素定位 */
+            width: 100%;
+            /* 宽度与父元素相同 */
+            left: 0;
+            /* 相对于父元素左边的距离 */
+            bottom: 15px;
+            /* 相对于父元素底部的距离 */
         }
 
-        .playing {
-            border-color: #ffc600;
-            box-shadow: 0 0 1rem #ffc600;
-            transform: scale(1.1);
+        .low::after {
+            /* 添加一个伪元素,作用是添加一个背景在音符上当处于低音 */
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 8px;
+            width: 5px;
+            /*圆点宽度*/
+            height: 5px;
+            /*圆点高度*/
+            background: white;
+            /*背景颜色*/
+            border-radius: 50%;
+            /*圆点为圆形*/
+            transform: translateX(-60%);
+            /*调整圆点位置*/
         }
 
-        /* ========== 手机适配 ========== */
-        @media (max-width: 768px) {
-            html {
-                font-size: 55%;
-                /* 1rem = 8px，整体缩小 */
-            }
-
-            .keys {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 0.5rem;
-                padding: 1rem;
-            }
-
-            .key {
-                width: 7rem;
-                /* 原来 10rem，缩小 */
-                margin: 0.5rem;
-                /* 原来 1rem */
-                padding: 0.8rem 0.4rem;
-                border-width: 0.3rem;
-            }
-
-            kbd {
-                font-size: 2.5rem;
-                /* 原来 4rem */
-            }
-
-            .sound {
-                font-size: 1rem;
-                /* 原来 1.2rem */
-            }
-
-            #bg-video {
-                object-position: 31.5% center;
-                /* 往左偏 15%，垂直居中 */
-            }
+        .high::after {
+            /* 添加一个伪元素,作用是添加一个背景在音符上当处于高音 */
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 6px;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            transform: translateX(-50%);
         }
 
-        /* 更小的手机 */
-        @media (max-width: 480px) {
-            html {
-                font-size: 55%;
+        @media (max-width: 450px) {
+            .container {
+                width: 300px;
+                gap: 10px;
             }
 
-            .keys {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 3.5rem;
-                padding: 5.8rem;
-
-            }
-
-            .key {
-                width: 8rem;
-                margin: 0.3rem;
-                padding: 0.6rem 0.3rem;
-            }
-
-            kbd {
-                font-size: 2.5rem;
-            }
-
-            .sound {
-                font-size: 0.9rem;
-            }
-
-            #bg-video {
-                object-position: 31.5% center;
-                /* 往左偏 15%，垂直居中 */
+            li {
+                width: 48px;
+                height: 48px;
+                font-size: 1.3em;
             }
         }
     </style>
-    <script type="text/javascript">
-        function playSoundByCode(code) {
-            const keyEl = document.querySelector(`div[data-key="${code}"]`);
-            const audioEl = document.querySelector(`audio[data-key="${code}"]`);
-            if (!audioEl) return;//如果没找到audio文件就返回
-
-            audioEl.currentTime = 0;
-            audioEl.play();
-            keyEl.classList.add("playing");
-        }
-
-        function removeTransition(e) {
-            //所以会触发 3 次 transitionend 事件：所以第一个 transitionend 事件
-            //第二次第三次 触发，所以要判断
-            if (e.propertyName !== 'transform') return;
-            //e.propertyName 事件对象内置属性，表示哪个 CSS 属性完成了过渡动画
-            this.classList.remove('playing');//不满足判断则移除
-        }
-
-        //前面那个window确保 HTML 元素都加载好了再执行代码，避免找不到元素
-        window.addEventListener("DOMContentLoaded", () => {
-            //获取页面上所有的按键元素
-            const keys = document.querySelectorAll('.key');
-
-            // 为每个按键添加 transitionend 监听
-            keys.forEach(key => {
-                // 'transitionend' 是CSS 过渡动画结束时触发的事件
-                //然后引用·移除过渡样式·的函数
-                key.addEventListener('transitionend', removeTransition);
-
-                // 添加点击/触摸支持
-                key.addEventListener('click', function () {
-                    //getAttribute()内置 DOM 方法，获取元素的属性值,这里的属性是'data-key'
-                    //因为用 this 就能拿到被点击的元素，浏览器有发送e，但是不需要使用
-                    const code = this.getAttribute('data-key');
-                    playSoundByCode(code);//调用播放声音函数
-                });
-            });
-            // 键盘支持
-            //this 指向 window，不是具体的按键元素,所以不能用 this
-            window.addEventListener("keydown", function (e) {
-                //e.code 事件对象内置属性，表示哪个键盘按键被按下了
-                playSoundByCode(e.code);
-            });
-        });
-    </script>
 </head>
 
 <body>
-    <video id="bg-video" autoplay loop muted playsinline poster="imgs/预防背景.png"><!--自动播放 循环 静音 手机端不全屏 -->
-        <!-- 这里换成你的视频路径 -->
-        <source src="videos/打击鼓背景.mp4" type="video/mp4">
-        <!-- 添加 webm 格式备用（兼容性更好） -->
-        <source src="videos/打击鼓背景.webm" type="video/webm">
-    </video>
+    <!-- 添加粒子画布 -->
+    <canvas id="star-canvas"></canvas>
 
-    <div class="keys">
-        <div data-key="KeyA" class="key">
-            <kbd>A</kbd> <!--相当于键盘按键按到多少 -->
-            <span class="sound">clap</span>
-        </div>
-        <div data-key="KeyS" class="key">
-            <kbd>S</kbd>
-            <span class="sound">hihat</span>
-        </div>
-        <div data-key="KeyD" class="key">
-            <kbd>D</kbd>
-            <span class="sound">kick</span>
-        </div>
-        <div data-key="KeyF" class="key">
-            <kbd>F</kbd>
-            <span class="sound">openhat</span>
-        </div>
-        <div data-key="KeyG" class="key">
-            <kbd>G</kbd>
-            <span class="sound">boom</span>
-        </div>
-        <div data-key="KeyH" class="key">
-            <kbd>H</kbd>
-            <span class="sound">ride</span>
-        </div>
-        <div data-key="KeyJ" class="key">
-            <kbd>J</kbd>
-            <span class="sound">snare</span>
-        </div>
-        <div data-key="KeyK" class="key">
-            <kbd>K</kbd>
-            <span class="sound">tom</span>
-        </div>
-        <div data-key="KeyL" class="key">
-            <kbd>L</kbd>
-            <span class="sound">tink</span>
-        </div>
-    </div>
-    <audio data-key="KeyA" src="sounds/clap.wav"></audio>
-    <audio data-key="KeyS" src="sounds/hihat.wav"></audio>
-    <audio data-key="KeyD" src="sounds/kick.wav"></audio>
-    <audio data-key="KeyF" src="sounds/openhat.wav"></audio>
-    <audio data-key="KeyG" src="sounds/boom.wav"></audio>
-    <audio data-key="KeyH" src="sounds/ride.wav"></audio>
-    <audio data-key="KeyJ" src="sounds/snare.wav"></audio>
-    <audio data-key="KeyK" src="sounds/tom.wav"></audio>
-    <audio data-key="KeyL" src="sounds/tink.wav"></audio>
+    <ul class="container">
 
+        <!-- 低音 1̣~7̣ -->
+        <li key='q' class="low"><span>1</span></li>
+        <li key='w' class="low"><span>2</span></li>
+        <li key='e' class="low"><span>3</span></li>
+        <li key='r' class="low"><span>4</span></li>
+        <li key='t' class="low"><span>5</span></li>
+        <li key='y' class="low"><span>6</span></li>
+        <li key='u' class="low"><span>7</span></li>
+
+        <!-- 中音 1~7 -->
+        <li key='1'><span>1</span></li>
+        <li key='2'><span>2</span></li>
+        <li key='3'><span>3</span></li>
+        <li key='4'><span>4</span></li>
+        <li key='5'><span>5</span></li>
+        <li key='6'><span>6</span></li>
+        <li key='7'><span>7</span></li>
+
+        <!-- 高音 1̇ -->
+        <li key='a' class="high"><span>1</span></li>
+        <!-- 低音
+        <li key='0' class="low"><span>7</span></li>
+        正常
+        <li key='1'><span>1</span></li>
+        <li key='2'><span>2</span></li>
+        <li key='3'><span>3</span></li>
+        <li key='4'><span>4</span></li>
+        <li key='5'><span>5</span></li>
+        <li key='6'><span>6</span></li>
+        <li key='7'><span>7</span></li>
+         高音 -->
+        <!-- <li key='a' class="high"><span>1</span></li> -->
+        <!-- <li key='s' class="high"><span>2</span></li> -->
+        <!-- <li key='d' class="high"><span>3</span></li> -->
+        <!-- <li key='f' class="high"><span>4</span></li> -->
+        <!-- <li key='g' class="high"><span>5</span></li> -->
+        <!-- <li key='h' class="high"><span>6</span></li> -->
+        <!-- <li key='j' class="high"><span>7</span></li> -->
+    </ul>
+    <script type="text/javascript">
+        var ctx; //只是声明，还没有东西
+        var sounds = [262, 294, 330, 349, 392, 440, 494, 523, 587, 659, 698, 784, 880, 988, 1047];
+        // 点击钢琴样式改变 按下去时颜色深，松开后变浅，有个视觉反馈
+        function changeColor(li) {
+            li.style.background = 'rgba(0,0,0,0.7)';
+            setTimeout(function () {// 延迟执行
+                li.style.background = 'rgba(0,0,0,0.2)';
+            }, 100);// 延迟100毫秒
+        }
+
+        //[0]是指找到第一个类名为container的元素
+        var container = document.getElementsByClassName('container')[0];
+
+        // 使用 pointerdown 事件替代 onclick，这样在手机上反应更快且能避免默认高亮
+        //无延迟，即时响应  直接判断 LI  onclick兼容各种点击目标，pointerdown只判断li
+        container.onpointerdown = function (e) {
+            if (e.target.tagName !== 'LI') {
+                //如果被点击的元素不是 <li>
+                return;
+            }
+            //把被点击的 <li> 赋值给局部变量 li
+            var li = e.target;
+            changeColor(li);// 改变颜色
+            //获得钢琴是第几键
+            var index = getIndex(li); // 获取索引
+            makeSound(index); // 播放声音
+        }
+
+        window.onkeydown = function (e) {
+            //属性选择器
+            //这一行只是在拼接一段字符串而已
+            var selector = `li[key="${e.key}"]`; // 获取选择器
+            //这里才是去找到这个元素
+            var li = document.querySelector(selector); // 获取元素
+
+            if (li) { // 如果元素存在
+                changeColor(li); // 改变颜色
+                var index = getIndex(li); // 获取索引
+                makeSound(index); // 播放声音
+            }
+        }
+
+        function setContent() {
+            if (!ctx) { // 如果ctx是空的嘛？（确保只创建一次）
+                ctx = new AudioContext(); // 创建音频上下文
+            }
+        }
+
+        function getIndex(li) {
+            var ul = li.parentNode; // 获取父级ul
+            //Array.from(类数组)返回真数组，所以children是个真数组
+            //真数组可以用indexOf()方法
+            // 这里也是通过传入的li->父ul->获取所有li->准确获得索引
+            // 获得准确索引就可以通过makeSound()播放指定的声音了
+            var children = Array.from(ul.children); // 获取所有li
+            return children.indexOf(li); // 返回索引
+        }
+        function makeSound(index) {
+            // 获得音频上下文
+            setContent();
+
+            // 1. 创建音频节点
+            // 得到音频振荡器,ctx已经是创建了的音频上下文（总公司）
+            // 可以调用里面的方法
+            var osc = ctx.createOscillator(); // 振荡器
+            //得到音量控制对象
+            var g = ctx.createGain();         // 音量控制
+            //添加低通滤波器 (Low Pass Filter) 增加了一个滤波器节点
+            // 专门过滤掉 2000Hz 以上的高频杂音。这能让声音听起来更“厚实”且不扎耳朵，增加了一种温暖的质感。
+            var filter = ctx.createBiquadFilter(); // 滤波器（让声音更柔和）
+
+            // 2. 配置节点连接: 振荡器 -> 滤波器 -> 音量控制 -> 扬声器
+            //振荡器产生的声音先进入滤波器处理
+            osc.connect(filter);
+            //滤波器处理完的声音再进入音量控制器 g（gain，增益）
+            filter.connect(g);
+            //音量控制后的声音最终输出到扬声器
+            g.connect(ctx.destination);
+
+            // 3. 设置音色
+            // triangle (三角波) 比 sine (正弦波) 更温暖，比 square (方波) 更柔和，适合琴声
+            osc.type = 'triangle';
+            //// 频率，找到的是数组里面对应索引的数字作为频率
+            osc.frequency.value = sounds[index];
+
+            // 4. 配置滤波器 (低通滤波，滤掉刺耳的高频)
+            //注释：滤波器的作用——让低频通过，阻挡高频
+            filter.type = 'lowpass';
+            //只允许 2000Hz 以下的声音通过，高于 2000Hz 的刺耳成分被过滤掉
+            filter.frequency.value = 2000; // 只允许 2000Hz 以下的声音通过，增加温暖感
+
+            // 5. 设置音量包络 (淡入淡出，消除“咔嗒”声和刺耳感)
+            //记录"现在"的时间点，后续所有时间计算都基于这个基准
+            var now = ctx.currentTime;
+            var attack = 0.05;  // 淡入时间：0.05秒，让声音开始得更自然
+            var release = 0.8;  // 淡出时间：0.8秒，模拟琴弦余音
+            //0.2（即 20% 音量），比原来的 0.3 更保守，防止声音太大破音
+            var peakVolume = 0.2; // 峰值音量稍稍降低，防止破音
+
+            //setValueAtTime(值, 时间)	在指定时间点(这里指定now)，把音量设为指定值
+            g.gain.setValueAtTime(0, now); // 初始音量为 0
+
+            // 线性淡入到峰值
+            //从 now 到 now + 0.05秒，音量从 0 匀速升到 0.2
+            g.gain.linearRampToValueAtTime(peakVolume, now + attack);
+            // 指数淡出到几乎无声 (0.001)，模拟乐器自然衰减
+            //从起音结束（now + 0.05秒）开始，经过 0.8秒，音量指数衰减到几乎无声。
+            // 这种"先快后慢"的衰减像真实琴弦：一开始余音明显，然后慢慢消失
+            g.gain.exponentialRampToValueAtTime(0.001, now + attack + release);
+
+            // 6. 播放与停止
+            //在 now 时刻开始播放（实际上会立即执行），在 now + 0.05 + 0.8 + 0.1 秒停止
+            osc.start(now);
+            osc.stop(now + attack + release + 0.1); // 在声音完全消失后停止
+        }
+
+        // ========粒子星空=======
+        (function () {
+            // 1.获取画布
+            var canvas = document.getElementById('star-canvas');
+            var ctx2d = canvas.getContext('2d');//2D绘图上下文
+
+            // 2.设置画布大小为窗口大小
+            function resize() {
+                canvas.width = window.innerWidth;//画布宽=窗口宽
+                canvas.height = window.innerHeight;//画布高=窗口高
+            }
+            resize();//初始化时运行一次
+            window.addEventListener('resize', resize);//窗口大小变化时重新设置
+
+            // 3.星星类 -每颗星星都是一个对象（这是一个类）
+            function Star() {
+                this.x = Math.random() * canvas.width;//随机x坐标
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;//x方向速度
+                this.vy = (Math.random() - 0.5) * 0.5;//y方向速度
+
+                this.size = Math.random() * 2 + 1;//星星大小（1~3像素）
+                this.opacity = Math.random() * 0.5 + 0.3;//透明度0.3~0.8
+            }
+
+            // 4.更新星星位置（每帧调用）
+            Star.prototype.update = function () {
+                this.x += this.vx;//x坐标加上x方向速度（新位置=旧位置+速度）
+                this.y += this.vy;//y坐标加上y方向速度
+
+                //如果星星超出边界，则将星星重新放回边界内(循环效果)
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+
+            // 5.绘制星星（每帧调用）
+            Star.prototype.draw = function () {
+                ctx2d.beginPath();//开始绘制路径
+                ctx2d.arc(this.x, this.y, this.size, 0, Math.PI * 2);//绘制圆形(星星)
+                ctx2d.closePath();//结束绘制
+
+                //设置星星颜色
+                ctx2d.fillStyle = 'rgba(255,255,255,' + this.opacity + ')';//白色透明度
+                ctx2d.fill();//填充颜色
+            };
+
+            // 6.创建星星数组
+            var starCount = 100;//星星数量
+            var stars = [];//星星数组
+            for (var i = 0; i < starCount; i++) {
+                stars.push(new Star());//创建星星对象并加入数组
+            }
+
+            // 7.画连接线（距离近的星星之间画线）
+            function drawLines() {
+                for (var i = 0; i < stars.length; i++) {
+                    for (var j = i + 1; j < stars.length; j++) {
+                        // 计算两颗星星之间的距离
+                        var dx = stars[i].x - stars[j].x;//x方向坐标差
+                        var dy = stars[i].y - stars[j].y;//y方向坐标差
+                        var dist = Math.sqrt(dx * dx + dy * dy);//勾股算直线
+
+                        // 如果距离小于100像素，画连接线
+                        if (dist < 100) {
+                            ctx2d.beginPath();
+                            ctx2d.moveTo(stars[i].x, stars[i].y);//起点
+                            ctx2d.lineTo(stars[j].x, stars[j].y);//终点
+                            // 线透明度根据距离而变化：越近越明显
+                            var lineOpacity = (1 - dist / 100) * 0.2;
+                            ctx2d.strokeStyle = 'rgba(255,255,255,' + lineOpacity + ')';
+
+                            ctx2d.stroke();//画线
+                        }
+                    }
+                }
+            }
+
+            // 8.动画循环（核心！）
+            function animate() {
+                // 清空画布（擦除上一帧内容）
+                ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 更新所有星星位置
+                for (var i = 0; i < stars.length; i++) {
+                    stars[i].update();
+                }
+
+                // 画连接线
+                drawLines();
+                // 绘制所有星星
+                for (var i = 0; i < stars.length; i++) {
+                    stars[i].draw();
+                }
+                // 请求下一帧动画（递归调用，形成循环）
+                requestAnimationFrame(animate);
+            }
+            // 启动动画循环
+            animate();
+        })();//立即执行函数，避免变量污染全局
+
+    </script>
 </body>
 
 </html>
